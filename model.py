@@ -63,22 +63,22 @@ def main():
     test_dataframe = pd.read_csv("./kaggle/emnist-balanced-test.csv")
     mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
 
-    # display(train_dataframe.head())
-    # train_dataframe.info()
-    # # last element is labels
-    # print(f"\nTrain set shape:  {train_dataframe.shape}")
-    # print(f"Test set shape:  {test_dataframe.shape}\n")
+    display(train_dataframe.head())
+    train_dataframe.info()
+    # last element is labels
+    print(f"\nTrain set shape:  {train_dataframe.shape}")
+    print(f"Test set shape:  {test_dataframe.shape}\n")
 
-    # # see class frequency
-    # labels = train_dataframe["45"].values
+    # see class frequency
+    labels = train_dataframe["45"].values
 
-    # plt.figure(figsize=(20,6))
-    # sns.countplot(x=labels)
+    plt.figure(figsize=(20,6))
+    sns.countplot(x=labels)
 
     # get class mapping in dict
-    # mapping.head()
+    mapping.head()
     class_mapping = get_class_mapping(mapping)
-    # print(f"{class_mapping}\n")
+    print(f"{class_mapping}\n")
 
     # extract label and training data
     train_labels = np.array(train_dataframe.iloc[:,0].values)
@@ -93,11 +93,10 @@ def main():
     del train_dataframe
     del test_dataframe
 
-    # fig, axes = plt.subplots(4, 5,figsize=(12,12))
-
-    # for i, j in enumerate(axes.flat):
-    #     j.set_title(class_mapping.get(train_labels[i]))
-    #     j.imshow(train_images[i].reshape([28,28]))
+    fig, axes = plt.subplots(4, 5,figsize=(12,12))
+    for i, j in enumerate(axes.flat):
+        j.set_title(class_mapping.get(train_labels[i]))
+        j.imshow(train_images[i].reshape([28,28]))
 
     # normalize
     train_images = train_images.astype('float32') / 255
@@ -119,21 +118,19 @@ def main():
     print(f"Shape after transpose: {train_images.shape}")
     print(f"Mean after transpose: {np.mean(train_images[116])}\n")
 
-    # # show image after transpose (readable)
-    # fig2, axes2 = plt.subplots(4, 5,figsize=(12,12))
+    # show image after transpose (readable)
+    fig2, axes2 = plt.subplots(4, 5,figsize=(12,12))
+    for i, j in enumerate(axes2.flat):
+        j.set_title(class_mapping.get(train_labels[i]))
+        j.imshow(train_images[i])
 
-    # for i, j in enumerate(axes2.flat):
-    #     j.set_title(class_mapping.get(train_labels[i]))
-    #     j.imshow(train_images[i])
+    # compare input preprocessing pipeline with training image data
+    fig3, axes3 = plt.subplots(1, 2,figsize=(8,4))
+    for i, j in enumerate(axes3.flat):
+        j.set_title(class_mapping.get(train_labels[116]))
+        j.imshow(train_images[116])
 
-    # # compare input preprocessing pipeline with training image data
-    # fig3, axes3 = plt.subplots(1, 2,figsize=(8,4))
-
-    # for i, j in enumerate(axes3.flat):
-    #     j.set_title(class_mapping.get(train_labels[116]))
-    #     j.imshow(train_images[116])
-
-    # preprocess_image('sample_input.png', 'processed.png')
+    preprocess_image('sample_input.png', 'processed.png')
 
     # encode labels into one-hot vectors
     train_labels = tf.keras.utils.to_categorical(train_labels)
@@ -249,18 +246,6 @@ def main():
     # fig4, axes4 = plt.figure(2, 2, figsize=(12, 8))
     # for i, ax in enumerate(axes.flatten()):
     #     ax.plot(history.history)
-
-    # train_ds, test_ds = tf.keras.utils.image_dataset_from_directory(
-    #     directory=data_dir,
-    #     batch_size=32,
-    #     color_mode='grayscale',
-    #     image_size=(128, 128),
-    #     seed=0,
-    #     validation_split=0.3,
-    #     subset='both'
-    # )
-
-    # print(train_ds.element_spec, test_ds.element_spec)
 
 
 def get_class_mapping(mapping):
