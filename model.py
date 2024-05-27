@@ -14,6 +14,8 @@ import cv2
 from scipy.ndimage import gaussian_filter
 from IPython.display import display, clear_output
 from keras import models, layers
+from keras.callbacks import EarlyStopping
+from keras.models import Sequential
 
 
 # GLOBAL VARIABLES
@@ -52,84 +54,201 @@ def main():
     # class_names = tf.io.gfile.listdir(str(data_dir))
     # print(class_names)
 
+
+
     #
     # kaggle, EMNIST balanced
     #
-    train_set = pd.read_csv("./kaggle/emnist-balanced-train.csv")
-    test_set = pd.read_csv("./kaggle/emnist-balanced-test.csv")
+    train_dataframe = pd.read_csv("./kaggle/emnist-balanced-train.csv")
+    test_dataframe = pd.read_csv("./kaggle/emnist-balanced-test.csv")
     mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
 
-    display(train_set.head())
-    train_set.info()
-    # last element is labels
-    print(f"\nTrain set shape:  {train_set.shape}")
-    print(f"Test set shape:  {test_set.shape}\n")
+    # display(train_dataframe.head())
+    # train_dataframe.info()
+    # # last element is labels
+    # print(f"\nTrain set shape:  {train_dataframe.shape}")
+    # print(f"Test set shape:  {test_dataframe.shape}\n")
 
-    # see class frequency
-    labels1 = train_set["45"].values
-    labels=set(labels1)
-    labels=list(labels)
-    labels = [str(label) for label in labels]
-    print(f"Labels: {labels}\n")
+    # # see class frequency
+    # labels = train_dataframe["45"].values
 
-    plt.figure(figsize=(20,6))
-    sns.countplot(x=labels1)
+    # plt.figure(figsize=(20,6))
+    # sns.countplot(x=labels)
 
-    mapping.head()
+    # get class mapping in dict
+    # mapping.head()
     class_mapping = get_class_mapping(mapping)
-    print(f"{class_mapping}\n")
+    # print(f"{class_mapping}\n")
 
     # extract label and training data
-    y_train = np.array(train_set.iloc[:,0].values)
-    x_train = np.array(train_set.iloc[:,1:].values)
+    train_labels = np.array(train_dataframe.iloc[:,0].values)
+    train_images = np.array(train_dataframe.iloc[:,1:].values)
 
-    y_test = np.array(test_set.iloc[:,0].values)
-    x_test = np.array(test_set.iloc[:,1:].values)
-    print(f"Extracted Labels: {y_train}\n")
-    print(f"Train data shape: {x_train.shape}")
-    print(f"Train data shape: {x_test.shape}\n")
+    test_labels = np.array(test_dataframe.iloc[:,0].values)
+    test_images = np.array(test_dataframe.iloc[:,1:].values)
+    print(f"Extracted Labels: {train_labels}\n")
+    print(f"Train data shape: {train_images.shape}")
+    print(f"Train data shape: {test_images.shape}\n")
 
-    fig, axes = plt.subplots(4, 5,figsize=(12,12))
+    del train_dataframe
+    del test_dataframe
 
-    for i, j in enumerate(axes.flat):
-        j.set_title(class_mapping.get(y_train[i+2]))
-        j.imshow(x_train[i+2].reshape([28,28]))
+    # fig, axes = plt.subplots(4, 5,figsize=(12,12))
+
+    # for i, j in enumerate(axes.flat):
+    #     j.set_title(class_mapping.get(train_labels[i]))
+    #     j.imshow(train_images[i].reshape([28,28]))
 
     # normalize
-    x_train = x_train.astype('float32') / 255
-    x_test = x_test.astype('float32') / 255
+    train_images = train_images.astype('float32') / 255
+    test_images = test_images.astype('float32') / 255
 
     # Reshape the data to have a single color channel (since EMNIST is grayscale)
     # and match the input shape expected by the model
-    x_train = x_train.reshape((-1, 28, 28, 1))
-    x_test = x_test.reshape((-1, 28, 28, 1))
-    print(f"Shape before transpose: {x_train.shape}")
-    print(f"Mean before transpose: {np.mean(x_train[116])}\n")
+    train_images = train_images.reshape((-1, 28, 28, 1))
+    test_images = test_images.reshape((-1, 28, 28, 1))
+    print(f"Shape before transpose: {train_images.shape}")
+    print(f"Mean before transpose: {np.mean(train_images[116])}\n")
 
     # transpose to reverse effect from converting png to csv (2D -> 1D)
     def transpose_data(x):
         return np.transpose(np.squeeze(x))[..., np.newaxis]
     
-    x_train = np.array([transpose_data(x) for x in x_train])
-    x_test = np.array([transpose_data(x) for x in x_test])
-    print(f"Shape after transpose: {x_train.shape}")
-    print(f"Mean after transpose: {np.mean(x_train[116])}\n")
+    train_images = np.array([transpose_data(x) for x in train_images])
+    test_images = np.array([transpose_data(x) for x in test_images])
+    print(f"Shape after transpose: {train_images.shape}")
+    print(f"Mean after transpose: {np.mean(train_images[116])}\n")
 
-    # show image after transpose (readable)
-    fig2, axes2 = plt.subplots(4, 5,figsize=(12,12))
+    # # show image after transpose (readable)
+    # fig2, axes2 = plt.subplots(4, 5,figsize=(12,12))
 
-    for i, j in enumerate(axes2.flat):
-        j.set_title(class_mapping.get(y_train[i+2]))
-        j.imshow(x_train[i+2])
+    # for i, j in enumerate(axes2.flat):
+    #     j.set_title(class_mapping.get(train_labels[i]))
+    #     j.imshow(train_images[i])
 
-    # compare input preprocessing pipeline with training image data
-    fig3, axes3 = plt.subplots(1, 2,figsize=(8,4))
+    # # compare input preprocessing pipeline with training image data
+    # fig3, axes3 = plt.subplots(1, 2,figsize=(8,4))
 
-    for i, j in enumerate(axes3.flat):
-        j.set_title(class_mapping.get(y_train[116]))
-        j.imshow(x_train[116])
+    # for i, j in enumerate(axes3.flat):
+    #     j.set_title(class_mapping.get(train_labels[116]))
+    #     j.imshow(train_images[116])
 
-    preprocess_image('sample_input.png', 'processed.png')
+    # preprocess_image('sample_input.png', 'processed.png')
+
+    # encode labels into one-hot vectors
+    train_labels = tf.keras.utils.to_categorical(train_labels)
+    test_labels = tf.keras.utils.to_categorical(test_labels)
+    print(f"Example label: {train_labels[0]}\n")
+
+    # put images and labels together in tf dataset
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
+    print(f"TF Dataset shape: {train_dataset.element_spec}")
+
+    del train_images
+    del train_labels
+    del test_images
+    del test_labels
+
+    train_dataset = train_dataset.cache().shuffle(10000).batch(16).prefetch(tf.data.AUTOTUNE)
+    test_dataset = test_dataset.batch(16)
+
+    # build model
+    num_classes = len(class_mapping)
+
+    for x, y in train_dataset.take(1):
+        plt.figure()
+        plt.imshow(x[0])
+        plt.title(class_mapping.get(np.argmax(y[0].numpy())))
+        print(f"Input shape: {x.shape[1:]}")
+        plt.show()
+
+    input_shape = x.shape[1:]
+
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((3, 3)),
+    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='relu'),
+    #     layers.Dense(128, activation='relu'),
+    #     layers.Dropout(0.3),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes, activation='softmax')
+    # ])
+
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='sigmoid'),
+    #     layers.Dense(128, activation='sigmoid'),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes, activation='softmax')
+    # ])
+
+    model = Sequential([
+        layers.Input(shape=input_shape),
+        layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+        layers.Flatten(),
+        layers.Dense(256, activation='relu'),
+        layers.Dropout(0.25),
+        layers.Dense(128, activation='relu'),
+        layers.Dropout(0.25),
+        layers.Dense(64, activation='relu'),
+        layers.Dropout(0.5),
+        layers.Dense(num_classes, activation='softmax')
+    ])
+
+    model.summary()
+
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    EPOCHS = 100
+
+    early_stopping = EarlyStopping(
+        monitor='val_accuracy',
+        min_delta=0,
+        restore_best_weights=True,
+        patience=3,
+        mode='max',
+        verbose=0
+    )
+
+    history = model.fit(train_dataset,
+                        epochs=EPOCHS, 
+                        validation_data=test_dataset, 
+                        callbacks=[early_stopping, training_plot]
+                        )
+    
+    # model.save(filepath='ocr_model_small')
+    # model.save(filepath='ocr_model_variant')
+    model.save(filepath='ocr_model')
+
+    model.evaluate(test_dataset, return_dict=True)
+    
+
+
+    # fig4, axes4 = plt.figure(2, 2, figsize=(12, 8))
+    # for i, ax in enumerate(axes.flatten()):
+    #     ax.plot(history.history)
 
     # train_ds, test_ds = tf.keras.utils.image_dataset_from_directory(
     #     directory=data_dir,
@@ -153,54 +272,103 @@ def get_class_mapping(mapping):
 
 
 def preprocess_image(input_image_path, output_image_path):
-    # Step 1: Read the original 128x128 binary image
+    # read the original 128x128 binary image
     image = cv2.imread(input_image_path, cv2.IMREAD_GRAYSCALE)
     if image is None:
         raise ValueError("Image not found or the path is incorrect")
     
-    # Invert the colors of the image
+    # invert the colors of the image
     image = 255 - image
 
-    # Step 2: Apply Gaussian filter with σ = 1
+    # apply Gaussian filter with σ = 1
     image = gaussian_filter(image, sigma=1)
 
-    # Step 3: Extract the region around the character
-    # Find non-zero pixels (characters)
+    # extract the region around the character
+    # find non-zero pixels (characters)
     coords = cv2.findNonZero(image)
     x, y, w, h = cv2.boundingRect(coords)
 
-    # Crop the image to the bounding box
+    # crop the image to the bounding box
     cropped_image = image[y:y+h, x:x+w]
 
-    # Step 4: Center the character in a square image
-    # Calculate the size of the new image (keeping the aspect ratio)
+    # center the character in a square image
+    # calculate the size of the new image (keeping the aspect ratio)
     max_side = max(w, h)
     square_image = np.zeros((max_side, max_side), dtype=np.uint8)
 
-    # Compute the offset to center the character
+    # compute the offset to center the character
     x_offset = (max_side - w) // 2
     y_offset = (max_side - h) // 2
 
-    # Place the cropped image in the center of the square image
+    # place the cropped image in the center of the square image
     square_image[y_offset:y_offset+h, x_offset:x_offset+w] = cropped_image
 
-    # Step 5: Add a 2-pixel border
+    # add a 2-pixel border
     padded_image = cv2.copyMakeBorder(square_image, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=0)
 
-    # Step 6: Down-sample to 28x28 using bi-cubic interpolation
+    # down-sample to 28x28 using bi-cubic interpolation
     downsampled_image = cv2.resize(padded_image, (28, 28), interpolation=cv2.INTER_CUBIC)
 
-    # Step 7: Scale intensity values to [0, 255]
-    # Convert image to have values in range [0, 255]
+    # scale intensity values to [0, 255]
+    # convert image to have values in range [0, 255]
     final_image = cv2.normalize(downsampled_image, None, 0, 255, cv2.NORM_MINMAX)
 
+    # normalize values between [0, 1]
     final_image = final_image/255.0
 
-    print(f"Mean input image: {np.mean(final_image)}")
+    # verify that preprocessing is consistant with data
+    print(f"Mean input image: {np.mean(final_image)}\n")
     plt.imshow(final_image[..., np.newaxis])
 
-    # Save the final processed image
+    # save the final processed image
     cv2.imwrite(output_image_path, final_image[..., np.newaxis])
+
+    # add batch shape, and channel
+    return final_image[np.newaxis, ..., np.newaxis]
+
+
+# graph, plot
+class TrainingPlot(tf.keras.callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        self.loss = []
+        self.acc = []
+        self.val_loss = []
+        self.val_acc = []
+        self.logs = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        # append latest log
+        self.logs.append(logs)
+        self.loss.append(logs.get('loss'))
+        self.acc.append(logs.get('accuracy'))
+        self.val_loss.append(logs.get('val_loss'))
+        self.val_acc.append(logs.get('val_accuracy'))
+
+        # at least 2 data points
+        if len(self.loss) > 1 and len(self.acc) > 1:
+
+            # plot graph
+            clear_output(wait=True)
+            N = np.arange(0, len(self.loss))
+
+            plt.style.use("seaborn")
+
+            plt.figure(figsize=(12, 6))
+            plt.subplot(1, 2, 1)
+            plt.plot(N, self.loss, self.val_loss)
+            plt.legend(['loss', 'val_loss'])
+            plt.ylim([0, max(plt.ylim())])
+            plt.xlabel('Epoch')
+            plt.ylabel('Loss [CrossEntrophy]')
+
+            plt.subplot(1, 2, 2)
+            plt.plot(N, 100*np.array(self.acc), 100*np.array(self.val_acc))
+            plt.legend(['accuracy', 'val_accuracy'])
+            plt.ylim([0, 100])
+            plt.xlabel('Epoch')
+            plt.ylabel('Accuracy [%]')
+
+            plt.show()
 
 
 def rename_and_move_file():
@@ -232,6 +400,7 @@ def rename_and_move_file():
 
 
 if __name__ == "__main__":
+    training_plot = TrainingPlot()
     main()
 
 
