@@ -162,6 +162,7 @@ def main():
 
     input_shape = x.shape[1:]
 
+    # # small
     # model = Sequential([
     #     layers.Input(shape=input_shape),
     #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
@@ -178,6 +179,7 @@ def main():
     #     layers.Dense(num_classes, activation='softmax')
     # ])
 
+    # # variant
     # model = Sequential([
     #     layers.Input(shape=input_shape),
     #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
@@ -193,6 +195,7 @@ def main():
     #     layers.Dense(num_classes, activation='softmax')
     # ])
 
+    # # ocr model
     # model = Sequential([
     #     layers.Input(shape=input_shape),
     #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
