@@ -132,10 +132,10 @@ def main():
 
     preprocess_image('sample_input.png', 'processed.png')
 
-    # encode labels into one-hot vectors
-    train_labels = tf.keras.utils.to_categorical(train_labels)
-    test_labels = tf.keras.utils.to_categorical(test_labels)
-    print(f"Example label: {train_labels[0]}\n")
+    # # encode labels into one-hot vectors
+    # train_labels = tf.keras.utils.to_categorical(train_labels)
+    # test_labels = tf.keras.utils.to_categorical(test_labels)
+    # print(f"Example label: {train_labels[0]}\n")
 
     # put images and labels together in tf dataset
     train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
@@ -222,14 +222,20 @@ def main():
         layers.Dense(64, activation='relu'),
         layers.Dense(64, activation='relu'),
         layers.Dropout(0.5),
-        layers.Dense(num_classes, activation='softmax')
+        layers.Dense(num_classes)
     ])
 
     model.summary()
 
+    # model.compile(
+    #     optimizer='adam',
+    #     loss='categorical_crossentropy',
+    #     metrics=['accuracy']
+    # )
+
     model.compile(
         optimizer='adam',
-        loss='categorical_crossentropy',
+        loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=['accuracy']
     )
 
@@ -257,6 +263,7 @@ def main():
     # model.save(filepath='ocr_model_variant')
     # model.save(filepath='ocr_model')
     # model.save(filepath='ocr_model_xs')
+    model.save(filepath='ocr_model_scce')
 
     model.evaluate(test_dataset, return_dict=True)
     
