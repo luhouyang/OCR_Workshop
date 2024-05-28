@@ -266,7 +266,7 @@ def main():
     # model.save(filepath='ocr_model_variant')
     # model.save(filepath='ocr_model')
     # model.save(filepath='ocr_model_xs')
-    model.save(filepath='ocr_model_scce')
+    # model.save(filepath='ocr_model_scce')
 
     model.evaluate(test_dataset, return_dict=True)
     
