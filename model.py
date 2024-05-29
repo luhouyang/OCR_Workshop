@@ -130,7 +130,9 @@ def main():
         j.set_title(class_mapping.get(train_labels[116]))
         j.imshow(train_images[116])
 
-    preprocess_image('sample_input.png', 'processed.png')
+    # preprocess_image('sample_input.png', 'processed.png')
+    # preprocess_image('random_scale_img.png', 'random_processed.png')
+    preprocess_image('random_scale_img_f.png', 'random_processed_f.png')
 
     # # encode labels into one-hot vectors
     # train_labels = tf.keras.utils.to_categorical(train_labels)
@@ -148,7 +150,7 @@ def main():
     del test_labels
 
     train_dataset = train_dataset.cache().shuffle(10000).batch(16).prefetch(tf.data.AUTOTUNE)
-    test_dataset = test_dataset.batch(16)
+    test_dataset = test_dataset.cache().batch(16)
 
     # build model
     num_classes = len(class_mapping)
@@ -156,119 +158,119 @@ def main():
     for x, y in train_dataset.take(1):
         plt.figure()
         plt.imshow(x[0])
-        plt.title(class_mapping.get(np.argmax(y[0].numpy())))
+        plt.title(class_mapping.get(y[0].numpy()))
         print(f"Input shape: {x.shape[1:]}")
         plt.show()
 
     input_shape = x.shape[1:]
 
-    # # small
+    # # # small
+    # # model = Sequential([
+    # #     layers.Input(shape=input_shape),
+    # #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+    # #     layers.MaxPooling2D((3, 3)),
+    # #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    # #     layers.Flatten(),
+    # #     layers.Dense(256, activation='relu'),
+    # #     layers.Dense(128, activation='relu'),
+    # #     layers.Dropout(0.3),
+    # #     layers.Dense(64, activation='relu'),
+    # #     layers.Dropout(0.5),
+    # #     layers.Dense(num_classes, activation='softmax')
+    # # ])
+
+    # # # variant
+    # # model = Sequential([
+    # #     layers.Input(shape=input_shape),
+    # #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    # #     layers.Flatten(),
+    # #     layers.Dense(256, activation='sigmoid'),
+    # #     layers.Dense(128, activation='sigmoid'),
+    # #     layers.Dense(64, activation='relu'),
+    # #     layers.Dropout(0.5),
+    # #     layers.Dense(num_classes, activation='softmax')
+    # # ])
+
+    # # # ocr model
+    # # model = Sequential([
+    # #     layers.Input(shape=input_shape),
+    # #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    # #     layers.Flatten(),
+    # #     layers.Dense(256, activation='relu'),
+    # #     layers.Dropout(0.25),
+    # #     layers.Dense(128, activation='relu'),
+    # #     layers.Dropout(0.25),
+    # #     layers.Dense(64, activation='relu'),
+    # #     layers.Dropout(0.5),
+    # #     layers.Dense(num_classes, activation='softmax')
+    # # ])
+
+    # # extra small/scce
     # model = Sequential([
     #     layers.Input(shape=input_shape),
     #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
     #     layers.MaxPooling2D((3, 3)),
     #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
     #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
     #     layers.Flatten(),
-    #     layers.Dense(256, activation='relu'),
-    #     layers.Dense(128, activation='relu'),
-    #     layers.Dropout(0.3),
+    #     layers.Dense(64, activation='relu'),
     #     layers.Dense(64, activation='relu'),
     #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes, activation='softmax')
+    #     layers.Dense(num_classes)
     # ])
 
-    # # variant
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(256, activation='sigmoid'),
-    #     layers.Dense(128, activation='sigmoid'),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes, activation='softmax')
-    # ])
+    # model.summary()
 
-    # # ocr model
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(256, activation='relu'),
-    #     layers.Dropout(0.25),
-    #     layers.Dense(128, activation='relu'),
-    #     layers.Dropout(0.25),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes, activation='softmax')
-    # ])
-
-    # extra small
-    model = Sequential([
-        layers.Input(shape=input_shape),
-        layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
-        layers.MaxPooling2D((3, 3)),
-        layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu'),
-        layers.Dense(64, activation='relu'),
-        layers.Dropout(0.5),
-        layers.Dense(num_classes)
-    ])
-
-    model.summary()
+    # # model.compile(
+    # #     optimizer='adam',
+    # #     loss='categorical_crossentropy',
+    # #     metrics=['accuracy']
+    # # )
 
     # model.compile(
     #     optimizer='adam',
-    #     loss='categorical_crossentropy',
+    #     loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
     #     metrics=['accuracy']
     # )
 
-    model.compile(
-        optimizer='adam',
-        loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=['accuracy']
-    )
+    # EPOCHS = 100
 
-    EPOCHS = 100
+    # early_stopping = EarlyStopping(
+    #     monitor='val_accuracy',
+    #     min_delta=0,
+    #     restore_best_weights=True,
+    #     patience=3,
+    #     mode='max',
+    #     verbose=0
+    # )
 
-    early_stopping = EarlyStopping(
-        monitor='val_accuracy',
-        min_delta=0,
-        restore_best_weights=True,
-        patience=3,
-        mode='max',
-        verbose=0
-    )
-
-    history = model.fit(train_dataset,
-                        epochs=EPOCHS, 
-                        validation_data=test_dataset, 
-                        callbacks=[
-                            early_stopping, 
-                            training_plot
-                                   ]
-                        )
+    # history = model.fit(train_dataset,
+    #                     epochs=EPOCHS, 
+    #                     validation_data=test_dataset, 
+    #                     callbacks=[
+    #                         early_stopping, 
+    #                         training_plot
+    #                                ]
+    #                     )
     
-    # model.save(filepath='ocr_model_small')
-    # model.save(filepath='ocr_model_variant')
-    # model.save(filepath='ocr_model')
-    # model.save(filepath='ocr_model_xs')
-    # model.save(filepath='ocr_model_scce')
+    # # model.save(filepath='ocr_model_small')
+    # # model.save(filepath='ocr_model_variant')
+    # # model.save(filepath='ocr_model')
+    # # model.save(filepath='ocr_model_xs')
+    # # model.save(filepath='ocr_model_scce')
 
-    model.evaluate(test_dataset, return_dict=True)
+    # model.evaluate(test_dataset, return_dict=True)
     
 
 
@@ -286,7 +288,7 @@ def get_class_mapping(mapping):
 
 
 def preprocess_image(input_image_path, output_image_path):
-    # read the original 128x128 binary image
+    # read the original image
     image = cv2.imread(input_image_path, cv2.IMREAD_GRAYSCALE)
     if image is None:
         raise ValueError("Image not found or the path is incorrect")
@@ -340,6 +342,35 @@ def preprocess_image(input_image_path, output_image_path):
     # add batch shape, and channel
     return final_image[np.newaxis, ..., np.newaxis]
 
+
+class OCRModel(tf.Module):
+    def __init__(self, model):
+        self.model = model
+        self.class_mapping = {0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 
+                        10: 'A', 11: 'B', 12: 'C', 13: 'D', 14: 'E', 15: 'F', 16: 'G', 17: 'H', 18: 'I', 
+                        19: 'J', 20: 'K', 21: 'L', 22: 'M', 23: 'N', 24: 'O', 25: 'P', 26: 'Q', 27: 'R', 
+                        28: 'S', 29: 'T', 30: 'U', 31: 'V', 32: 'W', 33: 'X', 34: 'Y', 35: 'Z', 36: 'a', 
+                        37: 'b', 38: 'd', 39: 'e', 40: 'f', 41: 'g', 42: 'h', 43: 'n', 44: 'q', 45: 'r', 
+                        46: 't'}
+
+    @tf.function
+    def predict(self, data):
+        if isinstance(data, tf.Tensor):
+            pred = self.model(data, training=False)
+        elif isinstance(data, str):
+            image = preprocess_image(data, "processed_image.png")
+            pred = self.model(image, training=False)
+        else:
+            raise ValueError("Unsurported data type.\nPlease pass preprocessed image using preprocess_image function.\nOr pass path to image file")
+        
+        return pred
+    
+    def __call__(self, data):
+        pred = self.predict(data)
+        # pred_index = tf.argmax(pred, axis=-1)[0]
+        # pred_index = tf.cast(pred_index, tf.int32)
+        return self.class_mapping.get(np.argmax(pred.numpy()[0]))
+    
 
 # graph, plot
 class TrainingPlot(tf.keras.callbacks.Callback):
