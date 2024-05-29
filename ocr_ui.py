@@ -8,7 +8,7 @@ from model import preprocess_image, OCRModel
 
 
 def main():
-    model = tf.keras.models.load_model('models/ocr_model_xs_diff_para')
+    model = tf.keras.models.load_model('models/ocr_model_xs_v2')
     ocr_model = OCRModel(model)
 
     # image = preprocess_image('sample_input.png', 'processed.png')

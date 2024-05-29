@@ -232,7 +232,25 @@ def main():
     #     layers.Dense(num_classes)
     # ])
 
-    # extra small/scce
+    # # ocr model large v2
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((3, 3)),
+    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='relu'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(128, activation='relu'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes)
+    # ])
+
+    # xs v2, extra small/scce
     model = Sequential([
         layers.Input(shape=input_shape),
         layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
@@ -301,7 +319,8 @@ def main():
     # model.save(filepath='models/ocr_model_large')
     # model.save(filepath='models/ocr_model_xs')
     # # model.save(filepath='models/ocr_model_scce')
-    # model.save(filepath='models/ocr_model_xs_diff_para')
+    model.save(filepath='models/ocr_model_xs_v2')
+    # model.save(filepath='models/ocr_model_large_v2')
 
     model.evaluate(test_dataset, return_dict=True)
     
