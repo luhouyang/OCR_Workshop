@@ -132,7 +132,8 @@ def main():
 
     # preprocess_image('sample_input.png', 'processed.png')
     # preprocess_image('random_scale_img.png', 'random_processed.png')
-    preprocess_image('images/random_scale_img_f.png', 'images/random_processed_f.png')
+    pre_img = preprocess_image('images/random_scale_img_f.png', 'images/random_processed_f.png')
+    plt.imshow(np.squeeze(pre_img, axis=0))
 
     # # encode labels into one-hot vectors
     # train_labels = tf.keras.utils.to_categorical(train_labels)
@@ -319,7 +320,7 @@ def main():
     # model.save(filepath='models/ocr_model_large')
     # model.save(filepath='models/ocr_model_xs')
     # # model.save(filepath='models/ocr_model_scce')
-    model.save(filepath='models/ocr_model_xs_v2')
+    # model.save(filepath='models/ocr_model_xs_v2')
     # model.save(filepath='models/ocr_model_large_v2')
 
     model.evaluate(test_dataset, return_dict=True)
@@ -386,7 +387,6 @@ def preprocess_image(input_image_path, output_image_path):
 
     # verify that preprocessing is consistant with data
     print(f"Mean input image: {np.mean(final_image)}\n")
-    plt.imshow(final_image[..., np.newaxis])
 
     # save the final processed image
     cv2.imwrite(output_image_path, final_image[..., np.newaxis])
@@ -404,13 +404,16 @@ class OCRModel(tf.Module):
                         28: 'S', 29: 'T', 30: 'U', 31: 'V', 32: 'W', 33: 'X', 34: 'Y', 35: 'Z', 36: 'a', 
                         37: 'b', 38: 'd', 39: 'e', 40: 'f', 41: 'g', 42: 'h', 43: 'n', 44: 'q', 45: 'r', 
                         46: 't'}
+        self.classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+                         'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
+                         'Y', 'Z', 'a', 'b', 'd', 'e', 'f', 'g', 'h', 'n', 'q', 'r', 't']
 
     @tf.function
     def predict(self, data):
         if isinstance(data, tf.Tensor):
             pred = self.model(data, training=False)
         elif isinstance(data, str):
-            image = preprocess_image(data, "images/processed_image.png")
+            image = self.preprocess_image(data, "images/processed_image.png")
             pred = self.model(image, training=False)
         else:
             raise ValueError("Unsurported data type.\nPlease pass preprocessed image using preprocess_image function.\nOr pass path to image file")
@@ -421,7 +424,61 @@ class OCRModel(tf.Module):
         pred = self.predict(data)
         # pred_index = tf.argmax(pred, axis=-1)[0]
         # pred_index = tf.cast(pred_index, tf.int32)
-        return self.class_mapping.get(np.argmax(pred.numpy()[0]))
+        return self.class_mapping.get(np.argmax(pred.numpy()[0])), pred
+    
+    def preprocess_image(self, input_image_path, output_image_path):
+        # read the original image
+        image = cv2.imread(input_image_path, cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            raise ValueError("Image not found or the path is incorrect")
+        
+        # invert the colors of the image
+        image = 255 - image
+
+        # apply Gaussian filter with σ = 1
+        image = gaussian_filter(image, sigma=1)
+
+        # extract the region around the character
+        # find non-zero pixels (characters)
+        coords = cv2.findNonZero(image)
+        x, y, w, h = cv2.boundingRect(coords)
+
+        # crop the image to the bounding box
+        cropped_image = image[y:y+h, x:x+w]
+
+        # center the character in a square image
+        # calculate the size of the new image (keeping the aspect ratio)
+        max_side = max(w, h)
+        square_image = np.zeros((max_side, max_side), dtype=np.uint8)
+
+        # compute the offset to center the character
+        x_offset = (max_side - w) // 2
+        y_offset = (max_side - h) // 2
+
+        # place the cropped image in the center of the square image
+        square_image[y_offset:y_offset+h, x_offset:x_offset+w] = cropped_image
+
+        # add a 2-pixel border
+        padded_image = cv2.copyMakeBorder(square_image, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=0)
+
+        # down-sample to 28x28 using bi-cubic interpolation
+        downsampled_image = cv2.resize(padded_image, (28, 28), interpolation=cv2.INTER_CUBIC)
+
+        # scale intensity values to [0, 255]
+        # convert image to have values in range [0, 255]
+        final_image = cv2.normalize(downsampled_image, None, 0, 255, cv2.NORM_MINMAX)
+
+        # normalize values between [0, 1]
+        final_image = final_image/255.0
+
+        # verify that preprocessing is consistant with data
+        print(f"Mean input image: {np.mean(final_image)}\n")
+
+        # save the final processed image
+        cv2.imwrite(output_image_path, final_image[..., np.newaxis])
+
+        # add batch shape, and channel
+        return final_image[np.newaxis, ..., np.newaxis]
     
 
 # graph, plot
