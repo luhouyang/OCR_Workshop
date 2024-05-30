@@ -394,6 +394,10 @@ def preprocess_image(input_image_path, output_image_path):
     # add batch shape, and channel
     return final_image[np.newaxis, ..., np.newaxis]
 
+    # depending on tf version, and other dependancies may run into error since data is float64.
+    # if error occurs during inference, uncomment line below & comment away return above
+    # return (final_image[np.newaxis, ..., np.newaxis]).astype(np.float32)
+
 
 class OCRModel(tf.Module):
     def __init__(self, model):
@@ -479,6 +483,10 @@ class OCRModel(tf.Module):
 
         # add batch shape, and channel
         return final_image[np.newaxis, ..., np.newaxis]
+    
+        # depending on tf version, and other dependancies may run into error since data is float64.
+        # if error occurs during inference, uncomment line below & comment away return above
+        # return (final_image[np.newaxis, ..., np.newaxis]).astype(np.float32)
     
 
 # graph, plot
