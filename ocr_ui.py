@@ -77,6 +77,7 @@ def main():
 
         image = ocr_model.preprocess_image(DATA_DIR, 'preprocessed_img.png')
 
+        # print(repr(image))
         result, pred = ocr_model(image)
         print(f"Prediction result: {result}")
 
