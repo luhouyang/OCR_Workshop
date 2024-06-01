@@ -264,7 +264,7 @@ def main():
         layers.Dense(64, activation='relu'),
         layers.Dropout(0.5),
         layers.Dense(num_classes)
-    ])
+    ], name='OCR Model')
 
     # # xs same para with large
     # model = Sequential([
@@ -305,6 +305,8 @@ def main():
         mode='max',
         verbose=0
     )
+
+    confusion(test_dataset)
 
     history = model.fit(train_dataset,
                         epochs=EPOCHS, 
@@ -531,6 +533,33 @@ class TrainingPlot(tf.keras.callbacks.Callback):
             plt.ylabel('Accuracy [%]')
 
             plt.show()
+
+
+def confusion(val_ds):
+    classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+                         'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
+                         'Y', 'Z', 'a', 'b', 'd', 'e', 'f', 'g', 'h', 'n', 'q', 'r', 't']
+    
+    mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
+    mapping = mapping[0].values
+
+    model = tf.keras.models.load_model('models/ocr_model_xs_v2')
+    # confusion matrix
+    y_pred = model.predict(val_ds)
+    y_pred = tf.argmax(y_pred, axis=1)
+    y_true = tf.concat(list(val_ds.map(lambda data, label: label)), axis=0)
+
+    confusion_mtx = tf.math.confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(20, 20))
+    plt.autoscale(tight=True)
+    sns.heatmap(confusion_mtx,
+                xticklabels=classes,
+                yticklabels=classes,
+                annot=True, fmt='g')
+    plt.xlabel('Prediction')
+    plt.ylabel('Label')
+
+    plt.show()
 
 
 def rename_and_move_file():
