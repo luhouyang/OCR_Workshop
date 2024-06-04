@@ -34,7 +34,7 @@ def main():
         metrics=['accuracy']
     )
 
-    # fien tune quantized model
+    # fine tune quantized model
     EPOCHS = 3
     history = q_aware_model.fit(train_dataset,
                         epochs=EPOCHS, 
