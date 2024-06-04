@@ -31,263 +31,12 @@ EPOCH = 5
 
 
 def main():
-    #
-    # download data, by_merge, unzip, NIST
-    #    
-    # download_data_dir = pathlib.Path(DOWNLOAD_DATA_DIR)
-    # if not data_dir.exists():
-    #     tf.keras.utils.get_file(
-    #         'by_merge.zip',
-    #         origin='https://s3.amazonaws.com/nist-srd/SD19/by_merge.zip',
-    #         extract=True,
-    #         cache_dir='.',
-    #         cache_subdir='data'
-    #     )
 
-    #
-    # reorganize folder, rename data files
-    #
-    #
-    # rename_and_move_file()
+    train_dataset, test_dataset = get_train_test_dataset()
 
-    # data_dir = pathlib.Path(DATA_DIR)
-    # class_names = tf.io.gfile.listdir(str(data_dir))
-    # print(class_names)
-
-
-
-    #
-    # kaggle, EMNIST balanced
-    #
-    train_dataframe = pd.read_csv("./kaggle/emnist-balanced-train.csv")
-    test_dataframe = pd.read_csv("./kaggle/emnist-balanced-test.csv")
-    mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
-
-    display(train_dataframe.head())
-    train_dataframe.info()
-    # last element is labels
-    print(f"\nTrain set shape:  {train_dataframe.shape}")
-    print(f"Test set shape:  {test_dataframe.shape}\n")
-
-    # see class frequency
-    labels = train_dataframe["45"].values
-
-    plt.figure(figsize=(20,6))
-    sns.countplot(x=labels)
-
-    # get class mapping in dict
-    mapping.head()
-    class_mapping = get_class_mapping(mapping)
-    print(f"{class_mapping}\n")
-
-    # extract label and training data
-    train_labels = np.array(train_dataframe.iloc[:,0].values)
-    train_images = np.array(train_dataframe.iloc[:,1:].values)
-
-    test_labels = np.array(test_dataframe.iloc[:,0].values)
-    test_images = np.array(test_dataframe.iloc[:,1:].values)
-    print(f"Extracted Labels: {train_labels}\n")
-    print(f"Train data shape: {train_images.shape}")
-    print(f"Train data shape: {test_images.shape}\n")
-
-    del train_dataframe
-    del test_dataframe
-
-    fig, axes = plt.subplots(4, 5,figsize=(12,12))
-    for i, j in enumerate(axes.flat):
-        j.set_title(class_mapping.get(train_labels[i]))
-        j.imshow(train_images[i].reshape([28,28]))
-
-    # normalize
-    train_images = train_images.astype('float32') / 255
-    test_images = test_images.astype('float32') / 255
-
-    # Reshape the data to have a single color channel (since EMNIST is grayscale)
-    # and match the input shape expected by the model
-    train_images = train_images.reshape((-1, 28, 28, 1))
-    test_images = test_images.reshape((-1, 28, 28, 1))
-    print(f"Shape before transpose: {train_images.shape}")
-    print(f"Mean before transpose: {np.mean(train_images[116])}\n")
-
-    # transpose to reverse effect from converting png to csv (2D -> 1D)
-    def transpose_data(x):
-        return np.transpose(np.squeeze(x))[..., np.newaxis]
-    
-    train_images = np.array([transpose_data(x) for x in train_images])
-    test_images = np.array([transpose_data(x) for x in test_images])
-    print(f"Shape after transpose: {train_images.shape}")
-    print(f"Mean after transpose: {np.mean(train_images[116])}\n")
-
-    # show image after transpose (readable)
-    fig2, axes2 = plt.subplots(4, 5,figsize=(12,12))
-    for i, j in enumerate(axes2.flat):
-        j.set_title(class_mapping.get(train_labels[i]))
-        j.imshow(train_images[i])
-
-    # compare input preprocessing pipeline with training image data
-    fig3, axes3 = plt.subplots(1, 2,figsize=(8,4))
-    for i, j in enumerate(axes3.flat):
-        j.set_title(class_mapping.get(train_labels[116]))
-        j.imshow(train_images[116])
-
-    # preprocess_image('sample_input.png', 'processed.png')
-    # preprocess_image('random_scale_img.png', 'random_processed.png')
-    pre_img = preprocess_image('images/random_scale_img_f.png', 'images/random_processed_f.png')
-    plt.imshow(np.squeeze(pre_img, axis=0))
-
-    # # encode labels into one-hot vectors
-    # train_labels = tf.keras.utils.to_categorical(train_labels)
-    # test_labels = tf.keras.utils.to_categorical(test_labels)
-    # print(f"Example label: {train_labels[0]}\n")
-
-    # put images and labels together in tf dataset
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
-    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
-    print(f"TF Dataset shape: {train_dataset.element_spec}")
-
-    del train_images
-    del train_labels
-    del test_images
-    del test_labels
-
-    train_dataset = train_dataset.cache().shuffle(10000).batch(16).prefetch(tf.data.AUTOTUNE)
-    test_dataset = test_dataset.cache().batch(16)
-
-    # build model
-    num_classes = len(class_mapping)
-
-    for x, y in train_dataset.take(1):
-        plt.figure()
-        plt.imshow(x[0])
-        plt.title(class_mapping.get(y[0].numpy()))
-        print(f"Input shape: {x.shape[1:]}")
-        plt.show()
-
-    input_shape = x.shape[1:]
-
-    # # small
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((3, 3)),
-    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(256, activation='relu'),
-    #     layers.Dense(128, activation='relu'),
-    #     layers.Dropout(0.3),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes, activation='softmax')
-    # ])
-
-    # # small same para with large
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(256, activation='relu'),
-    #     layers.Dense(128, activation='relu'),
-    #     layers.Dropout(0.3),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes, activation='softmax')
-    # ])
-
-    # # # variant
-    # # model = Sequential([
-    # #     layers.Input(shape=input_shape),
-    # #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
-    # #     layers.MaxPooling2D((2, 2)),
-    # #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-    # #     layers.MaxPooling2D((2, 2)),
-    # #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    # #     layers.Flatten(),
-    # #     layers.Dense(256, activation='sigmoid'),
-    # #     layers.Dense(128, activation='sigmoid'),
-    # #     layers.Dense(64, activation='relu'),
-    # #     layers.Dropout(0.5),
-    # #     layers.Dense(num_classes, activation='softmax')
-    # # ])
-
-    # # ocr model large
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(256, activation='relu'),
-    #     layers.Dropout(0.25),
-    #     layers.Dense(128, activation='relu'),
-    #     layers.Dropout(0.25),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes)
-    # ])
-
-    # # ocr model large v2
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((3, 3)),
-    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(256, activation='relu'),
-    #     layers.Dropout(0.25),
-    #     layers.Dense(128, activation='relu'),
-    #     layers.Dropout(0.25),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes)
-    # ])
-
-    # xs v2, extra small/scce
-    model = Sequential([
-        layers.Input(shape=input_shape),
-        layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
-        layers.MaxPooling2D((3, 3)),
-        layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu'),
-        layers.Dense(64, activation='relu'),
-        layers.Dropout(0.5),
-        layers.Dense(num_classes)
-    ], name='OCR Model')
-
-    # # xs same para with large
-    # model = Sequential([
-    #     layers.Input(shape=input_shape),
-    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-    #     layers.MaxPooling2D((2, 2)),
-    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
-    #     layers.Flatten(),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dense(64, activation='relu'),
-    #     layers.Dropout(0.5),
-    #     layers.Dense(num_classes)
-    # ])
+    model = get_model(train_dataset)
 
     model.summary()
-
-    # model.compile(
-    #     optimizer='adam',
-    #     loss='categorical_crossentropy',
-    #     metrics=['accuracy']
-    # )
 
     model.compile(
         optimizer='adam',
@@ -295,7 +44,7 @@ def main():
         metrics=['accuracy']
     )
 
-    EPOCHS = 100
+    EPOCHS = 10
 
     early_stopping = EarlyStopping(
         monitor='val_accuracy',
@@ -305,8 +54,6 @@ def main():
         mode='max',
         verbose=0
     )
-
-    confusion(test_dataset)
 
     history = model.fit(train_dataset,
                         epochs=EPOCHS, 
@@ -326,12 +73,8 @@ def main():
     # model.save(filepath='models/ocr_model_large_v2')
 
     model.evaluate(test_dataset, return_dict=True)
-    
 
-
-    # fig4, axes4 = plt.figure(2, 2, figsize=(12, 8))
-    # for i, ax in enumerate(axes.flatten()):
-    #     ax.plot(history.history)
+    confusion(model, test_dataset)
 
 
 def get_class_mapping(mapping):
@@ -535,7 +278,133 @@ class TrainingPlot(tf.keras.callbacks.Callback):
             plt.show()
 
 
-def confusion(val_ds):
+def get_train_test_dataset():
+    #
+    # download data, by_merge, unzip, NIST
+    #    
+    # download_data_dir = pathlib.Path(DOWNLOAD_DATA_DIR)
+    # if not data_dir.exists():
+    #     tf.keras.utils.get_file(
+    #         'by_merge.zip',
+    #         origin='https://s3.amazonaws.com/nist-srd/SD19/by_merge.zip',
+    #         extract=True,
+    #         cache_dir='.',
+    #         cache_subdir='data'
+    #     )
+
+    #
+    # reorganize folder, rename data files
+    #
+    #
+    # rename_and_move_file()
+
+    # data_dir = pathlib.Path(DATA_DIR)
+    # class_names = tf.io.gfile.listdir(str(data_dir))
+    # print(class_names)
+
+
+
+    #
+    # kaggle, EMNIST balanced
+    #
+    train_dataframe = pd.read_csv("./kaggle/emnist-balanced-train.csv")
+    test_dataframe = pd.read_csv("./kaggle/emnist-balanced-test.csv")
+    mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
+
+    display(train_dataframe.head())
+    train_dataframe.info()
+    # last element is labels
+    print(f"\nTrain set shape:  {train_dataframe.shape}")
+    print(f"Test set shape:  {test_dataframe.shape}\n")
+
+    # see class frequency
+    labels = train_dataframe["45"].values
+
+    plt.figure(figsize=(20,6))
+    sns.countplot(x=labels)
+
+    # get class mapping in dict
+    mapping.head()
+    class_mapping = get_class_mapping(mapping)
+    print(f"{class_mapping}\n")
+
+    # extract label and training data
+    train_labels = np.array(train_dataframe.iloc[:,0].values)
+    train_images = np.array(train_dataframe.iloc[:,1:].values)
+
+    test_labels = np.array(test_dataframe.iloc[:,0].values)
+    test_images = np.array(test_dataframe.iloc[:,1:].values)
+    print(f"Extracted Labels: {train_labels}\n")
+    print(f"Train data shape: {train_images.shape}")
+    print(f"Train data shape: {test_images.shape}\n")
+
+    del train_dataframe
+    del test_dataframe
+
+    fig, axes = plt.subplots(4, 5,figsize=(12,12))
+    for i, j in enumerate(axes.flat):
+        j.set_title(class_mapping.get(train_labels[i]))
+        j.imshow(train_images[i].reshape([28,28]))
+
+    # normalize
+    train_images = train_images.astype('float32') / 255
+    test_images = test_images.astype('float32') / 255
+
+    # Reshape the data to have a single color channel (since EMNIST is grayscale)
+    # and match the input shape expected by the model
+    train_images = train_images.reshape((-1, 28, 28, 1))
+    test_images = test_images.reshape((-1, 28, 28, 1))
+    print(f"Shape before transpose: {train_images.shape}")
+    print(f"Mean before transpose: {np.mean(train_images[116])}\n")
+
+    # transpose to reverse effect from converting png to csv (2D -> 1D)
+    def transpose_data(x):
+        return np.transpose(np.squeeze(x))[..., np.newaxis]
+    
+    train_images = np.array([transpose_data(x) for x in train_images])
+    test_images = np.array([transpose_data(x) for x in test_images])
+    print(f"Shape after transpose: {train_images.shape}")
+    print(f"Mean after transpose: {np.mean(train_images[116])}\n")
+
+    # show image after transpose (readable)
+    fig2, axes2 = plt.subplots(4, 5,figsize=(12,12))
+    for i, j in enumerate(axes2.flat):
+        j.set_title(class_mapping.get(train_labels[i]))
+        j.imshow(train_images[i])
+
+    # compare input preprocessing pipeline with training image data
+    fig3, axes3 = plt.subplots(1, 2,figsize=(8,4))
+    for i, j in enumerate(axes3.flat):
+        j.set_title(class_mapping.get(train_labels[116]))
+        j.imshow(train_images[116])
+
+    # preprocess_image('sample_input.png', 'processed.png')
+    # preprocess_image('random_scale_img.png', 'random_processed.png')
+    pre_img = preprocess_image('images/random_scale_img_f.png', 'images/random_processed_f.png')
+    plt.imshow(np.squeeze(pre_img, axis=0))
+
+    # # encode labels into one-hot vectors
+    # train_labels = tf.keras.utils.to_categorical(train_labels)
+    # test_labels = tf.keras.utils.to_categorical(test_labels)
+    # print(f"Example label: {train_labels[0]}\n")
+
+    # put images and labels together in tf dataset
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
+    print(f"TF Dataset shape: {train_dataset.element_spec}")
+
+    del train_images
+    del train_labels
+    del test_images
+    del test_labels
+
+    train_dataset = train_dataset.cache().shuffle(10000).batch(16).prefetch(tf.data.AUTOTUNE)
+    test_dataset = test_dataset.cache().batch(16)
+
+    return train_dataset, test_dataset
+
+
+def confusion(model, val_ds):
     classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
                          'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
                          'Y', 'Z', 'a', 'b', 'd', 'e', 'f', 'g', 'h', 'n', 'q', 'r', 't']
@@ -543,7 +412,7 @@ def confusion(val_ds):
     mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
     mapping = mapping[0].values
 
-    model = tf.keras.models.load_model('models/ocr_model_xs_v2')
+    # model = tf.keras.models.load_model('models/ocr_model_xs_v2')
     # confusion matrix
     y_pred = model.predict(val_ds)
     y_pred = tf.argmax(y_pred, axis=1)
@@ -560,6 +429,141 @@ def confusion(val_ds):
     plt.ylabel('Label')
 
     plt.show()
+
+
+def get_model(train_dataset):
+    mapping = pd.read_csv("./kaggle/emnist-balanced-mapping.txt", sep = ' ', header = None)
+    class_mapping = get_class_mapping(mapping)
+
+    # build model
+    num_classes = len(class_mapping)
+
+    for x, y in train_dataset.take(1):
+        plt.figure()
+        plt.imshow(x[0])
+        plt.title(class_mapping.get(y[0].numpy()))
+        print(f"Input shape: {x.shape[1:]}")
+        plt.show()
+
+    input_shape = x.shape[1:]
+
+    # # small
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((3, 3)),
+    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='relu'),
+    #     layers.Dense(128, activation='relu'),
+    #     layers.Dropout(0.3),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes, activation='softmax')
+    # ])
+
+    # # small same para with large
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='relu'),
+    #     layers.Dense(128, activation='relu'),
+    #     layers.Dropout(0.3),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes, activation='softmax')
+    # ])
+
+    # # # variant
+    # # model = Sequential([
+    # #     layers.Input(shape=input_shape),
+    # #     layers.Conv2D(filters=32, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    # #     layers.MaxPooling2D((2, 2)),
+    # #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    # #     layers.Flatten(),
+    # #     layers.Dense(256, activation='sigmoid'),
+    # #     layers.Dense(128, activation='sigmoid'),
+    # #     layers.Dense(64, activation='relu'),
+    # #     layers.Dropout(0.5),
+    # #     layers.Dense(num_classes, activation='softmax')
+    # # ])
+
+    # # ocr model large
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='relu'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(128, activation='relu'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes)
+    # ])
+
+    # # ocr model large v2
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((3, 3)),
+    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=256, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(256, activation='relu'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(128, activation='relu'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes)
+    # ])
+
+    # xs v2, extra small/scce
+    model = Sequential([
+        layers.Input(shape=input_shape),
+        layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+        layers.MaxPooling2D((3, 3)),
+        layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(64, activation='relu'),
+        layers.Dropout(0.5),
+        layers.Dense(num_classes)
+    ], name='OCR_Model')
+
+    # # xs same para with large
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes)
+    # ])
+
+    return model
 
 
 def rename_and_move_file():

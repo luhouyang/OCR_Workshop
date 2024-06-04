@@ -1,5 +1,4 @@
 import os
-import pathlib
 import tensorflow as tf
 import numpy as np
 import turtle
@@ -17,7 +16,7 @@ def main():
     # model = tf.keras.models.load_model('models/ocr_model_large')
     ocr_model = OCRModel(model)
 
-    t.title("PyBoard")
+    t.title("PyBoard | Shift + s to run prediction")
     t.setup(1000, 1000)
     t.screensize(1000, 1000)
     t.shape("circle")
