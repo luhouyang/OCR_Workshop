@@ -46,7 +46,7 @@ def main():
     # save quantized model
     QUANTIZED_PATH = 'models/quantized_model'
     TFLITE_PATH = 'quantized_model.tflite'
-    q_aware_model.save(QUANTIZED_PATH)\
+    q_aware_model.save(QUANTIZED_PATH)
     
     # convert model to tflite
     convert_model(QUANTIZED_PATH, TFLITE_PATH)
