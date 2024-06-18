@@ -27,8 +27,6 @@ np.random.seed(SEED)
 MERGE_DATA_DIR = 'D:\\training_data\\data\\by_merge'
 DATA_DIR = 'D:\\training_data\\balanced_MNIST'
 
-EPOCH = 5
-
 
 def main():
 
@@ -39,12 +37,12 @@ def main():
     model.summary()
 
     model.compile(
-        optimizer='adam',
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),
         loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=['accuracy']
     )
 
-    EPOCHS = 10
+    EPOCHS = 100
 
     early_stopping = EarlyStopping(
         monitor='val_accuracy',
@@ -71,6 +69,11 @@ def main():
     # # model.save(filepath='models/ocr_model_scce')
     # model.save(filepath='models/ocr_model_xs_v2')
     # model.save(filepath='models/ocr_model_large_v2')
+    # model.save(filepath="models/ocr_model_he_xxs")
+    # model.save(filepath="models/ocr_model_he_large")
+    # model.save(filepath="models/ocr_model_he_xs")
+
+    # model.save(filepath='models/ocr_model_xxs')
 
     model.evaluate(test_dataset, return_dict=True)
 
@@ -533,20 +536,20 @@ def get_model(train_dataset):
     #     layers.Dense(num_classes)
     # ])
 
-    # xs v2, extra small/scce
-    model = Sequential([
-        layers.Input(shape=input_shape),
-        layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
-        layers.MaxPooling2D((3, 3)),
-        layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu'),
-        layers.Dense(64, activation='relu'),
-        layers.Dropout(0.5),
-        layers.Dense(num_classes)
-    ], name='OCR_Model')
+    # # xs v2, extra small/scce
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((3, 3)),
+    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
+    #     layers.Flatten(),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dense(64, activation='relu'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes)
+    # ], name='OCR_Model')
 
     # # xs same para with large
     # model = Sequential([
@@ -562,9 +565,84 @@ def get_model(train_dataset):
     #     layers.Dropout(0.5),
     #     layers.Dense(num_classes)
     # ])
+    
+    # xxs
+    model = Sequential([
+        layers.Input(shape=input_shape),
+        layers.Conv2D(filters=16, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(filters=16, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(filters=16, kernel_size=(3, 3), activation='relu'),
+        layers.Flatten(),
+        layers.Dense(num_classes, activation='relu'), 
+        layers.Dropout(0.25),
+        layers.Dense(num_classes)
+    ], name='OCR_Model')
+
+    # # xs, he_normal
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(6, 6), activation='relu', padding='SAME', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.MaxPooling2D((3, 3)),
+    #     layers.Conv2D(filters=64, kernel_size=(4, 4), activation='relu', padding='SAME', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.Flatten(),
+    #     layers.Dense(64, activation='relu', kernel_initializer='he_normal'),
+    #     layers.Dense(64, activation='relu', kernel_initializer='he_normal'),
+    #     layers.Dropout(0.5),
+    #     layers.Dense(num_classes)
+    # ], name='OCR_Model')
+
+    # # he_normal xxs
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=16, kernel_size=(3, 3), activation='relu',
+    #                   kernel_initializer='he_normal'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=16, kernel_size=(3, 3), activation='relu',
+    #                   kernel_initializer='he_normal'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=16, kernel_size=(3, 3), activation='relu', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.Flatten(),
+    #     layers.Dense(num_classes, activation='relu', 
+    #                  kernel_initializer='he_normal'), 
+    #     layers.Dropout(0.25),
+    #     layers.Dense(num_classes)
+    # ], name='OCR_Model')
+
+    # # he large
+    # model = Sequential([
+    #     layers.Input(shape=input_shape),
+    #     layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.MaxPooling2D((2, 2)),
+    #     layers.Conv2D(filters=128, kernel_size=(3, 3), activation='relu', 
+    #                   kernel_initializer='he_normal'),
+    #     layers.Flatten(),
+    #     layers.Dense(units=256, activation='relu', 
+    #                  kernel_initializer='he_normal'),
+    #     layers.Dense(units=128, activation='relu', 
+    #                  kernel_initializer='he_normal'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(units=64, activation='relu', 
+    #                  kernel_initializer='he_normal'),
+    #     layers.Dropout(0.25),
+    #     layers.Dense(units=num_classes),
+    # ])
 
     return model
 
+def evaluate_and_plot_models():
+    pass
 
 def rename_and_move_file():
     ALL_CLASS_NAMES = os.listdir(MERGE_DATA_DIR)
