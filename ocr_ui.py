@@ -15,7 +15,7 @@ def main():
     # model = tf.keras.models.load_model('models/ocr_model_xs_v2')
     # model = tf.keras.models.load_model('models/ocr_model_large')
     # model = tf.keras.models.load_model('models/ocr_model_he_l2_large')
-    model = tf.keras.models.load_model('models/ocr_model_xxs')
+    model = tf.keras.models.load_model('models/ocr_model_xxs_v2')
     print(np.sum([np.prod(v.shape) for v in model.trainable_variables]))
     ocr_model = OCRModel(model)
 
