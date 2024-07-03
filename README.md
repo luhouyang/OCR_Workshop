@@ -18,7 +18,7 @@
 
 * quantized_models  $\rightarrow$   contains all quantized models
 
-* traiing_output    $\rightarrow$   contains all training plots
+* training_output    $\rightarrow$   contains all training plots
 
 ## **Files**
 
