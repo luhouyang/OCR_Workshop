@@ -1,7 +1,5 @@
 # **Optical Character Recognition Workshop Codebase**
 
----
-
 ## **Scripts**
 
 * model.py  $\rightarrow$   main code base
