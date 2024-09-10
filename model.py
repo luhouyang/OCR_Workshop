@@ -42,7 +42,7 @@ def main():
         metrics=['accuracy']
     )
 
-    EPOCHS = 100
+    EPOCHS = 20
 
     early_stopping = EarlyStopping(
         monitor='val_accuracy',
@@ -75,6 +75,8 @@ def main():
     # model.save(filepath="models/ocr_model_he_xxs")
     # model.save(filepath="models/ocr_model_he_large")
     # model.save(filepath="models/ocr_model_he_xs")
+
+    # model.save(filepath='models/test')
     
     model.evaluate(test_dataset, return_dict=True)
 

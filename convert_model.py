@@ -19,6 +19,7 @@ def main():
 
     # load pretrained model
     model = tf.keras.models.load_model('models/ocr_model_xxs_v2')
+    # model = tf.keras.models.load_model('models/test')
 
     # create quantization object
     quantize_model = tfmot.quantization.keras.quantize_model
@@ -44,8 +45,11 @@ def main():
     q_aware_model.evaluate(test_dataset, return_dict=True)
 
     # save quantized model
+    # QUANTIZED_PATH = 'models/quantized_test'
+    # TFLITE_PATH = 'quantized_test.tflite'
     QUANTIZED_PATH = 'models/quantized_model_xxs_v2'
     TFLITE_PATH = 'quantized_model_xxs_v2.tflite'
+
     q_aware_model.save(QUANTIZED_PATH)
     
     # convert model to tflite
