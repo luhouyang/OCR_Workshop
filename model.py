@@ -1,5 +1,4 @@
-# remove 1 hash tag '#' to make it run like Jupyter Notebook
-##%%
+# add '#%%' to make it run like Jupyter Notebook
 
 import os
 import pathlib
@@ -694,5 +693,4 @@ if __name__ == "__main__":
     training_plot = TrainingPlot()
     main()
 
-
-# %%
+# add '#%%' to make it run like Jupyter Notebook
