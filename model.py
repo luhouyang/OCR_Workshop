@@ -1,4 +1,5 @@
-#%%
+# remove 1 hash tag '#' to make it run like Jupyter Notebook
+##%%
 
 import os
 import pathlib
