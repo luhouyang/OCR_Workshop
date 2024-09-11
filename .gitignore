@@ -1,3 +1,4 @@
 kaggle/
 emnist-balanced-test.csv.zip
 emnist-balanced-train.csv.zip
+Google_Colab/*.ipynb

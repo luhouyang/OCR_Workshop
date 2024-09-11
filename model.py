@@ -1,5 +1,3 @@
-# add '#%%' to make it run like Jupyter Notebook
-
 import os
 import pathlib
 import shutil
