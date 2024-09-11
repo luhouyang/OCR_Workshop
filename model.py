@@ -692,5 +692,3 @@ def rename_and_move_file():
 if __name__ == "__main__":
     training_plot = TrainingPlot()
     main()
-
-# add '#%%' to make it run like Jupyter Notebook
